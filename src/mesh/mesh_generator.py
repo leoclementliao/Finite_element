@@ -7,7 +7,7 @@ class MeshGenerator:
         self.nx = nx
         
     def generate_mesh(self):
-        """Generate 2D mesh with triangular elements"""
+        """Generate Finite Element mesh"""
         h = self.length
         ny = self.nx
         [Mx, My] = np.meshgrid(np.linspace(0, self.length, self.nx), 
@@ -42,16 +42,26 @@ class MeshGenerator:
         BordL = np.where(abs(Nx-MinX)<1e-6)[0]
         
         # Sort boundary nodes
-        BordD = BordD[Nx[BordD].argsort()][1:]
+        BordD = BordD[Nx[BordD].argsort()]
         BordR = BordR[Ny[BordR].argsort()]
-        BordU = BordU[Nx[BordU].argsort()][1:]
+        BordU = BordU[Nx[BordU].argsort()]
         BordL = BordL[Ny[BordL].argsort()]
+        
+        element_area = np.zeros(Ne)
+        for i in range(Ne):
+            nodes = M_tri[i,:]
+            x = M_Nxy[nodes,0]
+            y = M_Nxy[nodes,1]
+            # 0.5*| (x2-x1)(y3-y1) - (x3-x1)(y2-y1) |
+            area = 0.5 * abs((x[1]-x[0])*(y[2]-y[0]) - (x[2]-x[0])*(y[1]-y[0]))
+            element_area[i] = area
         
         return {
             'nodes': M_Nxy,
             'elements': M_tri,
             'dof_map': M_GDof,
             'element_centers': M_EleCentre,
+            'element_area': element_area,
             'boundary': {
                 'bottom': BordD,
                 'right': BordR,
